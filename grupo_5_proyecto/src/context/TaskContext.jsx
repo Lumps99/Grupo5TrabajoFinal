@@ -1,33 +1,44 @@
-import { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from "react";
 import { tasks as data } from "../tasks";
 
 export const TaskContext = createContext();
 
 export function TaskContextProvider(props) {
-  const [tasks, setTasks] = useState([]);
+  // Obtener tareas guardadas en localStorage o utilizar datos iniciales
+  const initialTasks = JSON.parse(localStorage.getItem("tasks")) || data;
+  const [tasks, setTasks] = useState(initialTasks);
 
-  function createTask(task) {
-    setTasks([
-      ...tasks,
+  function createTask(newTask) {
+    setTasks((prevTasks) => [
+      ...prevTasks,
       {
-        title: task.title,
-        id: tasks.length,
-        description: task.description,
+        id: Date.now(),
+        title: newTask.title,
+        description: newTask.description,
+        completed: false,
       },
     ]);
   }
 
   function deleteTask(taskId) {
-    console.log(taskId); // Corregido para mostrar el ID de la tarea en lugar de "task"
-    setTasks(tasks.filter((task) => task.id !== taskId)); // Eliminar la tarea del estado
+    setTasks((prevTasks) => prevTasks.filter((task) => task.id !== taskId));
+  }
+
+  function completeTask(taskId) {
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, completed: !task.completed } : task
+      )
+    );
   }
 
   useEffect(() => {
-    setTasks(data);
-  }, []);
+    // Guardar tareas en localStorage cada vez que cambien
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
 
   return (
-    <TaskContext.Provider value={{ tasks, deleteTask, createTask }}>
+    <TaskContext.Provider value={{ tasks, deleteTask, createTask, completeTask }}>
       {props.children}
     </TaskContext.Provider>
   );
